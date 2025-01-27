@@ -1,3 +1,0 @@
-tokenizers==0.14.1
-transformers==4.34.0
-gradio==4.5.0
