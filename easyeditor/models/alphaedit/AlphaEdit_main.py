@@ -53,14 +53,14 @@ def apply_AlphaEdit_to_model(
     if not os.path.exists(hparams.P_loc):
         print(f"The null-space projection matrix P does not exist and now calculate.")
         W_out = nethook.get_parameter(model, f"{hparams.rewrite_module_tmp.format(hparams.layers[-1])}.weight")
-        if "llama" in hparams.model_name.lower() or "gpt-j-6b" in hparams.model_name.lower():
+        if "llama" in hparams.model_name.lower() or "gpt-j-6b" in hparams.model_name.lower() or "mistral" in hparams.model_name.lower():
             P = torch.zeros((len(hparams.layers), W_out.shape[1], W_out.shape[1]), device="cpu")
         elif "gpt2-xl" in hparams.model_name.lower():
             P = torch.zeros((len(hparams.layers), W_out.shape[0], W_out.shape[0]), device="cpu")
         del W_out
         for i, layer in enumerate(hparams.layers):
             P[i,:,:] = get_project(model, tok, layer, hparams)
-        torch.save(P, "null_space_project.pt")
+        torch.save(P, hparams.P_loc)
         P_loaded = True
     elif P_loaded == False:
         P = torch.load(hparams.P_loc)
@@ -70,7 +70,7 @@ def apply_AlphaEdit_to_model(
     # If this is the first calculation (i.e., cache_c_new == false), then initialize cache_c first
     if not cache_c_new:
         W_out = nethook.get_parameter(model, f"{hparams.rewrite_module_tmp.format(hparams.layers[-1])}.weight")
-        if "llama" in hparams.model_name.lower() or "gpt-j-6b" in hparams.model_name.lower():
+        if "llama" in hparams.model_name.lower() or "gpt-j-6b" in hparams.model_name.lower() or "mistral" in hparams.model_name.lower():
             cache_c = torch.zeros((len(hparams.layers), W_out.shape[1], W_out.shape[1]), device="cpu")
         elif "gpt2-xl" in hparams.model_name.lower():
             cache_c = torch.zeros((len(hparams.layers), W_out.shape[0], W_out.shape[0]), device="cpu")
@@ -211,7 +211,7 @@ def execute_AlphaEdit(
         targets = targets.repeat_interleave(repeat_factor, dim=1)
         resid = targets / (len(hparams.layers) - i)  # Distribute residual across layers
         upd_matrix = torch.linalg.solve(
-                P[i,:,:].to(f"cuda:{hparams.device}") @ (layer_ks.to(f"cuda:{hparams.device}") @ layer_ks.T.to(f"cuda:{hparams.device}") + cache_c[i,:,:].to(f"cuda:{hparams.device}")) + hparams.L2*torch.eye(layer_ks.shape[0], dtype=torch.float,device=f"cuda:{hparams.device}"),
+                P[i,:,:].to(f"cuda:{hparams.device}") @ (layer_ks.to(f"cuda:{hparams.device}") @ layer_ks.T.to(f"cuda:{hparams.device}") + hparams.Pre*cache_c[i,:,:].to(f"cuda:{hparams.device}")) + hparams.L2*torch.eye(layer_ks.shape[0], dtype=torch.float,device=f"cuda:{hparams.device}"),
                 P[i,:,:].to(f"cuda:{hparams.device}") @ layer_ks.to(f"cuda:{hparams.device}") @ resid.T.to(f"cuda:{hparams.device}")
         )
 

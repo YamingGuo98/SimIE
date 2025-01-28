@@ -5,6 +5,7 @@ import json
 import torch
 import numpy as np
 import random
+import copy
 from ..models.melo.melo import LORA
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModel, BitsAndBytesConfig
 from transformers import LlamaTokenizer,PreTrainedTokenizerFast, LlamaTokenizerFast
@@ -18,12 +19,14 @@ from ..util import nethook
 from ..util.hparams import HyperParams
 from ..util.alg_dict import *
 from ..evaluate.evaluate_utils import test_generation_quality
+from ..models.simie import SimIE
 
 logging.basicConfig(format = '%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
                     datefmt = '%m/%d/%Y %H:%M:%S',
                     level = logging.INFO)
 
 LOG = logging.getLogger(__name__)
+LOG.propagate = False
 def make_logs():
 
     f_h, s_h = get_handler('logs', log_name='run.log')
@@ -44,7 +47,54 @@ def seed_everything(seed):
     random.seed(seed)
     
 seed_everything(42)
-  
+
+# wandb logging
+import wandb
+def wandb_log(metrics, step, run):
+    mean_metrics = summary_metrics(metrics)
+    
+    summary_result = f"""
+        Metrics Summary:
+        Dataset Name      : {run.config.data_type}
+        DS Size           : {run.config.ds_size}
+        Model Name        : {run.config.model_name}
+        Editing Method    : {run.config.editing_method}
+        SimIE             : {run.config.simIE}
+        LamHyper          : {run.config.lamHyper}
+        Init Model        : {run.config.init_model}
+        Solver            : {run.config.solver}
+        Current Time Setp : {step}
+        Summary Metrics   : {mean_metrics}
+        """
+    
+    print(summary_result)
+
+    with open("outputs/metrics_summary.txt", "a") as file:
+        file.write('\n' + summary_result)
+
+    if run.config.data_type == "ZsRE" or run.config.data_type == "counterfact":
+        results = {
+            "Rel": mean_metrics['post']['rewrite_acc'],
+            "Gen": mean_metrics['post']['rephrase_acc'],
+            "Loc": mean_metrics['post']['locality']['neighborhood_acc'],
+            "Avg": (mean_metrics['post']['rewrite_acc'] + mean_metrics['post']['rephrase_acc'] + mean_metrics['post']['locality']['neighborhood_acc']) / 3
+        }
+    elif run.config.data_type == "hallucination":
+        results = {
+            "PPL": mean_metrics['post']['rewrite_ppl'],
+            "Loc": mean_metrics['post']['locality']['neighborhood_acc'],
+            # "Avg": (mean_metrics['post']['rewrite_ppl'] + mean_metrics['post']['locality']['neighborhood_acc']) / 2
+        }
+    wandb.log(step=step, data=results)
+
+# save model editing layer
+def save_edited_layer(model, weight_copy, run):
+    edited_layer = {}
+    for n, p in weight_copy.items():
+        edited_layer[n] = nethook.get_parameter(model, n).detach().clone().cpu()
+
+    torch.save(edited_layer, f"outputs/{run.config.data_type}_{run.config.model_name}_{run.config.editing_method}_{run.config.simIE}_{run.config.lamHyper}_edited_layer.pth")
+
 class BaseEditor:
     """Base editor for all methods"""
 
@@ -360,15 +410,47 @@ class BaseEditor:
             if verbose:
                 LOG.info(f"{idx} editing: {request['prompt']} -> {request['target_new']}  \n\n {all_metrics[idx]}")
 
+        # SimIE initialization
+        if kwargs['simIE']:
+            _, weights_copy, _ = edit_func(requests[-1])
+            simIE = SimIE(kwargs['lamHyper'], init=kwargs['init_model'], solver=kwargs['solver'])
+            simIE.initializtion(self.model_name, weights_copy, device=self.hparams.device)
+            self.model = simIE.reset_parameter(self.model)
+        # Prune initialization
+        if hasattr(self, 'prune') and self.prune is not None:
+            _, weights_copy, _ = edit_func(requests[-1])
+            self.prune.initializtion(weights_copy, self.hparams.device)
+            with torch.no_grad():
+                for k, v in weights_copy.items():
+                    nethook.get_parameter(self.model, k)[...] = v.to(f"cuda:{self.hparams.device}")
 
         if sequential_edit:
+            if kwargs['run'].config.data_type == "ZsRE" or kwargs['run'].config.data_type == "counterfact":
+                eval_rounds = [1, 10, 50, 100, 300, 500, 750, 1000]
+            elif kwargs['run'].config.data_type == "hallucination":
+                eval_rounds = [1, 10, 50, 100, 200, 300, 400, 500, 600]
             for i, request in enumerate(tqdm(requests, total=len(requests))):
+                if kwargs['simIE']:
+                    if simIE.init:
+                        self.model = simIE.reset_parameter(self.model)
+                    keys_cache = simIE.cache(self.model, [request], self.tok)
                 edited_model, weights_copy, icl_examples = edit_func(request)
-            if self.alg_name == 'WISE' and hasattr(self.hparams, 'save_path') and self.hparams.save_path:
-                print("Start saving the WISE model!")
-                edited_model.save(self.hparams.save_path)
-            for i, request in enumerate(requests):
-                edit_evaluation(all_metrics, request, edited_model, i, test_generation, icl_examples, **kwargs)
+                if kwargs['simIE']:
+                    edited_model = simIE.update(edited_model, keys_cache)
+                if i+1 in eval_rounds and i+1 < len(requests):
+                    if hasattr(self, 'prune') and self.prune is not None:
+                        edited_model = self.prune.reduce_weights(edited_model)
+                    _metrics = copy.deepcopy(all_metrics[:i+1])
+                    for k, request in enumerate(requests[:i+1]):
+                        edit_evaluation(_metrics, request, edited_model, k, test_generation, icl_examples, **kwargs)
+                    wandb_log(_metrics, i+1, kwargs['run'])
+            if hasattr(self, 'prune') and self.prune is not None:
+                edited_model = self.prune.reduce_weights(edited_model)
+            for k, request in enumerate(requests):
+                edit_evaluation(all_metrics, request, edited_model, k, test_generation, icl_examples, **kwargs)
+            wandb_log(all_metrics, len(requests), kwargs['run'])
+            if kwargs['save_model']:
+                save_edited_layer(edited_model, weights_copy, kwargs['run'])
         else:
             for i, request in enumerate(tqdm(requests, total=len(requests))):
                 edited_model, weights_copy, icl_examples = edit_func(request)
@@ -386,11 +468,8 @@ class BaseEditor:
                         for k, v in weights_copy.items():
                             nethook.get_parameter(self.model, k)[...] = v.to(f"cuda:{self.hparams.device}")
 
-
         if isinstance(edited_model, LORA):
             edited_model = edited_model.model
-        if len(all_metrics) != 0:
-            summary_metrics(all_metrics)
 
         return all_metrics, edited_model, weights_copy
 

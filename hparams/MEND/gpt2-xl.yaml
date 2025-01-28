@@ -1,8 +1,8 @@
 # Model
 
-archive: ./results/models/MEND/gpt2-xl
+archive: ./hypernetwork/MEND/gpt2-xl-ZsRE
 alg_name: "MEND"
-device: 4
+device: 0
 model_name: ./hugging_cache/gpt2-xl
 
 model_class: GPT2LMHeadModel

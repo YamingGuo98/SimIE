@@ -99,9 +99,11 @@ def layer_stats(
         # from datasets import Dataset
         # raw_ds = Dataset.from_file('XXX/XXX/wikipedia-train.arrow')
         # raw_ds = {'train': raw_ds}
+        cache_dir = "/data/wiki"
         raw_ds = load_dataset(
             ds_name,
-            dict(wikitext="wikitext-103-raw-v1", wikipedia="20200501.en")[ds_name]
+            dict(wikitext="wikitext-103-raw-v1", wikipedia="20200501.en")[ds_name],
+            cache_dir=cache_dir
         )
         if hasattr(model.config, 'n_positions'):
             maxlen = model.config.n_positions

@@ -4,11 +4,11 @@
 
 alg_name: "FT"
 model_name: "./hugging_cache/gpt2-xl"
-device: 4
+device: 0
 
 layers: [0]
 num_steps: 25
-batch_size: 3
+batch_size: 1
 max_length: 40
 lr: 5e-4
 weight_decay: 0

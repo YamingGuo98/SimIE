@@ -1,6 +1,6 @@
 # Model
 
-archive: ./results/models/MEND/Mistral-7B-v0.1
+archive: ./hypernetwork/MEND/Mistral-7B-v0.1-ZsRE
 alg_name: 'MEND'
 device: 0
 model_name: ./hugging_cache/Mistral-7B-v0.1

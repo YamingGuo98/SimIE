@@ -1,6 +1,6 @@
 alg_name: "GRACE"
 model_name: "./hugging_cache/llama-2-7b"
-device: 1
+device: 0
 
 inner_params:
 - model.layers[27].mlp.down_proj.weight

@@ -52,7 +52,7 @@ def summary_metrics(all_metrics):
                     #     [metric[eval][key][lkey] for metric in all_metrics])
     # mean_metrics["time"] = np.mean([metric["time"] for metric in all_metrics])
 
-    print("Metrics Summary: ", mean_metrics)
+    return mean_metrics
 
 def _prepare_requests(prompts: Union[str, List[str]],
                       target_new: Union[str, List[str]],

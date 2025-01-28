@@ -36,6 +36,7 @@ class AlphaEditHyperParams(HyperParams):
     mom2_dtype: str
     nullspace_threshold: float
     L2: float
+    Pre: float
     alg_name: str
     device: int
     model_name: str
