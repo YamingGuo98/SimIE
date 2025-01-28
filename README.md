@@ -13,7 +13,7 @@ pip install -r requirements.txt
 ## How to Run
 
 ### 1. Prepare the dataset
-The datasets used in the paper are from [ROME](https://arxiv.org/pdf/2202.05262) and [WISE](xxx). To avoid external links, we provide the datasets in the `data` folder, where `*-edit.json` are used for editing.
+The datasets used in the paper are from [ROME](https://arxiv.org/pdf/2202.05262) and [WISE](https://arxiv.org/pdf/2405.14768). To avoid external links, we provide the datasets in the `data` folder, where `*-edit.json` are used for editing.
 
 ### 2. Prepare the pre-trained model
 Pre-trained models can be downloaded from [HuggingFace](https://huggingface.co/models). We provide a Python script `download_pretrained.py` to help download pre-trained models, including LLaMA-2, Mistral, and GPT2-XL. The models will be stored in the `hugging_cache` folder.
@@ -31,7 +31,7 @@ To replicate the experimental results, hyperparameter configurations for each al
     python main_lifelong.py --editing_method <editing_method> --model_name <model_name> --data_type <data_type> --simIE
     ```
 - **Example:** To run MEMIT using ZsRE to edit LLaMA-2, and enhance it with the proposed SimIE with the hyperparameter $\lambda=10$, use the following command:
-```bash
-python main_lifelong.py --editing_method MEMIT --model_name llama-7b --data_type ZsRE --simIE --lamHyper 10
-```
+    ```bash
+    python main_lifelong.py --editing_method MEMIT --model_name llama-7b --data_type ZsRE --simIE --lamHyper 10
+    ```
 
