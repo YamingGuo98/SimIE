@@ -5,7 +5,7 @@ import json
 import torch
 import numpy as np
 import random
-from ..models.melo.melo import LORA
+# from ..models.melo.melo import LORA
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModel
 from transformers import LlamaTokenizer, LlamaForCausalLM
 from transformers import GPT2TokenizerFast, GPT2Tokenizer

@@ -6,8 +6,8 @@ import json
 import torch
 import numpy as np
 import random
-from ..models.dola import generate as dola_generate
-from ..models.deco import generate as deco_generate
+# from ..models.dola import generate as dola_generate
+# from ..models.deco import generate as deco_generate
 
 import transformers
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModel

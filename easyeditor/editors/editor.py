@@ -6,7 +6,7 @@ import torch
 import numpy as np
 import random
 import copy
-from ..models.melo.melo import LORA
+# from ..models.melo.melo import LORA
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModel, BitsAndBytesConfig
 from transformers import LlamaTokenizer,PreTrainedTokenizerFast, LlamaTokenizerFast
 from transformers import T5ForConditionalGeneration, T5Tokenizer

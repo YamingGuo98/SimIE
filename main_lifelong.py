@@ -30,7 +30,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_dir', default='./outputs', type=str)
     parser.add_argument('--ds_size', default=1000, type=int)
     parser.add_argument('--sequential_edit', default=True, action="store_true")
-    parser.add_argument('--simIE', default=False, action="store_false")
+    parser.add_argument('--simIE', default=False, action="store_true")
     parser.add_argument('--lamHyper', default=1, type=float)
     parser.add_argument('--init_model', default=False, action="store_true")
     parser.add_argument('--solver', default='LU', type=str)
