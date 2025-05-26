@@ -1,5 +1,5 @@
 # Towards Lifelong Model Editing via Simulating Ideal Editor
-This repository provides a PyTorch implementation of the paper **Towards Lifelong Model Editing via Simulating Ideal Editor**. This paper proposes a general framework that restores the strong performance of standard model editing methods in a lifelong context, bridging the gap between these two paradigms for the first time.
+This repository provides a PyTorch implementation of the ICML 2025 paper [Towards Lifelong Model Editing via Simulating Ideal Editor](https://icml.cc/virtual/2025/poster/45062). This paper proposes a general framework that restores the strong performance of standard model editing methods in a lifelong context, bridging the gap between these two paradigms for the first time.
 
 ![Illustration of SimIE, which enables the post-edit model to closely approximate the ideal state achieved by the ideal editor.](figures/SimIE.png)
 
@@ -35,3 +35,13 @@ To replicate the experimental results, hyperparameter configurations for each al
     python main_lifelong.py --editing_method MEMIT --model_name llama-7b --data_type ZsRE --simIE --lamHyper 10
     ```
 
+## Citation
+Please consider citing our paper as:
+```
+@InProceedings{guo2025towards,
+  title = 	 {Towards Lifelong Model Editing via Simulating Ideal Editor},
+  author =       {Guo, Yaming and Siyang, Guo and Hengshu, Zhu and Ying, Sun},
+  booktitle = 	 {Proceedings of the 42th International Conference on Machine Learning},
+  year = 	 {2025}
+}
+```
