@@ -40,7 +40,7 @@ Please consider citing our paper as:
 ```
 @InProceedings{guo2025towards,
   title = 	 {Towards Lifelong Model Editing via Simulating Ideal Editor},
-  author =       {Guo, Yaming and Siyang, Guo and Hengshu, Zhu and Ying, Sun},
+  author =       {Guo, Yaming and Guo, Siyang and Zhu, Hengshu and Sun, Ying},
   booktitle = 	 {Proceedings of the 42th International Conference on Machine Learning},
   year = 	 {2025}
 }
